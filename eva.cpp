@@ -70,50 +70,54 @@ bool EveryAware::init(
             const String clientId,
             const String clientSecret) {
 
+    _clientId = clientId;
+    _clientSecret = clientSecret;
+
     // building URL to request refresh and access token
     // TODO: move this to a constant?
-    String url = "https://cs.everyaware.eu/oauth/token";
+    String url = "/oauth/token";
     url += "?grant_type=password";
     url += "&client_id=" + clientId;
     url += "&client_secret=" + clientSecret;
     url += "&username=" + username;
     url += "&password=" + password;
 
-    #if (EVA_DEBUG == 1)
-        Serial.print("Requesting access token via: "); Serial.println(url);
-    #endif
+    JsonObject* jsonPtr = getJson(url, JSON_OBJECT_SIZE(4) + 160);
+    return _handleOauthResponse(jsonPtr);
+    
+}
 
-    HTTPClient http;
-    http.begin(url, EVA_SSH_FINGERPRINT);
+bool EveryAware::init(
+    const String refreshToken,
+    const String clientId,
+    const String clientSecret) {
 
-    http.addHeader("Content-Type", "application/json");
-    int httpCode = http.GET();
+    _refreshToken = refreshToken;
+    _clientId = clientId;
+    _clientSecret = clientSecret;
 
-    #if (EVA_DEBUG == 1)
-        Serial.print("HTTP response code:"); Serial.println(httpCode);
-    #endif
+    return _refreshAccessToken();
+}
 
-    // extract content
-    String content = http.getString();
+bool EveryAware::_refreshAccessToken() {
+    
+    // building URL to refresh access token
+    // TODO: move this to a constant?
+    String url = "https://cs.everyaware.eu/oauth/token";
+    url += "?grant_type=refresh_token";
+    url += "&client_id=" + _clientId;
+    url += "&client_secret=" + _clientSecret;
+    url += "&refresh_token=" + _refreshToken;
 
-    // end connection
-    http.end();
+    JsonObject* jsonPtr = getJson(url, JSON_OBJECT_SIZE(4) + 160);
+    return _handleOauthResponse(jsonPtr);
+}
 
-    #if (EVA_DEBUG == 1)
-        Serial.println("HTTP content:");
-        Serial.println(content);
-    #endif
+bool EveryAware::_handleOauthResponse(JsonObject* jsonPtr) {
+    
+    if (jsonPtr) {
 
-    if (httpCode == 200) {
-        
-        #if (EVA_DEBUG == 1)
-                Serial.println("Processing response.");
-        #endif
-
-        // see: https://bblanchon.github.io/ArduinoJson/assistant/
-        const size_t bufferSize = JSON_OBJECT_SIZE(4) + 160;
-        DynamicJsonBuffer jsonBuffer(bufferSize);
-        JsonObject& root = jsonBuffer.parseObject(content);
+        JsonObject& root = *jsonPtr;
 
         const char* newAccessToken = root["access_token"];
         const char* newRefreshToken = root["refresh_token"];
@@ -132,30 +136,24 @@ bool EveryAware::init(
     } else {
         return false;
     }
-
 }
 
-bool EveryAware::init(
-    const String refreshToken,
-    const String clientId,
-    const String clientSecret) {
-
-    // set refresh token
-    _refreshToken = refreshToken;
-
-    // directly get access token to check refresh token validity
-    
-    // building URL to request refresh and access token
-    // TODO: move this to a constant?
-    /**
-    String url = "https://cs.everyaware.eu/oauth/token";
-    url += "?grant_type=password";
-    url += "&client_id=" + clientId;
-    url += "&client_secret=" + clientSecret;
-    url += "&username=" + username;
-    url += "&password=" + password;
-    */
-
-    
+String EveryAware::getRefreshToken() {
+    return _refreshToken;
 }
+
+
+unsigned long EveryAware::getRefreshTokenExpiresIn(bool update) {
+    
+    if (update) {
+        _refreshAccessToken();
+    }
+    
+    return _refreshTokenExpiresIn - (millis() - _refreshTokenReferenceTime);
+}
+
+String EveryAware::getAccessToken() {
+    return _accessToken;
+}
+
 

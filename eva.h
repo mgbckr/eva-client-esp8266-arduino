@@ -7,6 +7,7 @@
 #define EVA_DEBUG 1
 #define EVA_WILDCARD "*"
 #define EVA_SSH_FINGERPRINT "29 41 9A 40 AF AF C6 70 65 E3 33 5D D2 B5 22 76 A0 07 13 6C"
+#define EVA_BASE_URL "https://cs.everyaware.eu"
 
  /**
  * TODO: maybe add function to retrieve arbitrary ranges of data, not just the latest
@@ -15,7 +16,7 @@ class EveryAware {
     
     public:
 
-        EveryAware(const String baseUrl);
+        EveryAware(const String baseUrl = EVA_BASE_URL);
         ~EveryAware(void);
 
 
@@ -26,7 +27,7 @@ class EveryAware {
          * You can get it with this class by initializing via username and password
          * and calling the getRefreshToken method.
          * Or, e.g., by using CURL (replace CLIENT):
-         *  curl "http://cs.everyaware.eu/oauth/token?grant_type=password&client_id=CLIENT_ID&client_secret=CLIENT_SECRET&username=USERNAME&password=PASSWORD"
+         *  curl "https://cs.everyaware.eu/oauth/token?grant_type=password&client_id=CLIENT_ID&client_secret=CLIENT_SECRET&username=USERNAME&password=PASSWORD"
          */
         bool init(
             const String refreshToken,
@@ -43,16 +44,12 @@ class EveryAware {
             const String clientId,
             const String clientSecret);
 
-        
-/**
         String getRefreshToken();
-        long getRefreshTokenExpirationDate();
+        unsigned long getRefreshTokenExpiresIn(bool update = false);
         
         String getAccessToken();
-        long getAccessTokenExpirationDate();
-        void refreshAccessToken();
 
-        
+        /**
 
         void postData(
             const char * feed, 
@@ -93,12 +90,18 @@ class EveryAware {
 
     private:
         String _baseUrl;
+        
+        String _clientId;
+        String _clientSecret;
+        
         String _refreshToken;
         unsigned long _refreshTokenExpiresIn;
         unsigned long _refreshTokenReferenceTime;
         
         String _accessToken;
 
+        bool _refreshAccessToken();
+        bool _handleOauthResponse(JsonObject* jsonPtr);
 };
 
 #endif
