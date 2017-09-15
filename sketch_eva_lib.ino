@@ -5,6 +5,14 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 #include <SimpleDHT.h>
+#include "data.h"
+
+/**
+ * Imports:
+ * EVA_CONFIG_WLAN_SSID
+ * EVA_CONFIG_WLAN_PASSWORD
+ */
+#include "config.h"
 
 // https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsClient.h>
@@ -12,8 +20,8 @@
 
 // SETTINGS
 
-const char* wlan_ssid             = "moby";
-const char* wlan_password         = "music123";
+const char* wlan_ssid             = EVA_CONFIG_WLAN_SSID;
+const char* wlan_password         = EVA_CONFIG_WLAN_PASSWORD;
 
 const String eva_sourceid         = "esp8266-test01";
 const String eva_feed             = "global";
@@ -235,6 +243,8 @@ void setup() {
 
     Serial.begin(115200);
 
+    Serial.println(WiFi.macAddress());
+
     Serial.print("Logging into WLAN: "); Serial.print(wlan_ssid); Serial.print(" ...");
     WiFi.mode(WIFI_STA);
     WiFi.begin(wlan_ssid, wlan_password);
@@ -279,6 +289,19 @@ void setup() {
 
 void loop() {
 
+    // test
+
+    JsonArray & data = EvaDataArrayBuilder(1200).
+        addDataPoint(123123).
+            addChannelValue("temp", 8.9).
+            addChannel("gps").
+                addComponent("lon", 45.0).
+                addComponent("lat", 12.1).
+                finalizeChannel().
+            finalizeDataPoint().
+        finalizeDataArray();
+
+    // rest
     webSocket.loop();
 
     //  if(WiFi.status() == WL_CONNECTED){ //Check WiFi connection status

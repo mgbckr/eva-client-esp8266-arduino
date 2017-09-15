@@ -6,11 +6,12 @@ const int httpsPort = 443;
 
 // should this be dynamic?
 
-EveryAware::EveryAware(String baseUrl) {
+EveryAwareAccess::EveryAwareAccess(String baseUrl) {
     _baseUrl = baseUrl;
+    _syncTime();
 }
 
-EveryAware::~EveryAware() {
+EveryAwareAccess::~EveryAwareAccess() {
     // nothing to do
 }
 
@@ -18,7 +19,7 @@ EveryAware::~EveryAware() {
  * To calculate the object size see:
  * https://bblanchon.github.io/ArduinoJson/assistant/ 
  */
-JsonObject* EveryAware::getJson(String relativeUrl, size_t objectSize) {
+JsonObject* EveryAwareAccess::getJson(String relativeUrl, size_t objectSize) {
 
     const String url = _baseUrl + relativeUrl;
     
@@ -64,7 +65,7 @@ JsonObject* EveryAware::getJson(String relativeUrl, size_t objectSize) {
     }
 }
 
-bool EveryAware::init(
+bool EveryAwareAccess::init(
             const String username, 
             const String password,
             const String clientId,
@@ -87,7 +88,7 @@ bool EveryAware::init(
     
 }
 
-bool EveryAware::init(
+bool EveryAwareAccess::init(
     const String refreshToken,
     const String clientId,
     const String clientSecret) {
@@ -99,7 +100,7 @@ bool EveryAware::init(
     return _refreshAccessToken();
 }
 
-bool EveryAware::_refreshAccessToken() {
+bool EveryAwareAccess::_refreshAccessToken() {
     
     // building URL to refresh access token
     // TODO: move this to a constant?
@@ -113,7 +114,7 @@ bool EveryAware::_refreshAccessToken() {
     return _handleOauthResponse(jsonPtr);
 }
 
-bool EveryAware::_handleOauthResponse(JsonObject* jsonPtr) {
+bool EveryAwareAccess::_handleOauthResponse(JsonObject* jsonPtr) {
     
     if (jsonPtr) {
 
@@ -138,12 +139,12 @@ bool EveryAware::_handleOauthResponse(JsonObject* jsonPtr) {
     }
 }
 
-String EveryAware::getRefreshToken() {
+String EveryAwareAccess::getRefreshToken() {
     return _refreshToken;
 }
 
 
-unsigned long EveryAware::getRefreshTokenExpiresIn(bool update) {
+unsigned long EveryAwareAccess::getRefreshTokenExpiresIn(bool update) {
     
     if (update) {
         _refreshAccessToken();
@@ -152,8 +153,110 @@ unsigned long EveryAware::getRefreshTokenExpiresIn(bool update) {
     return _refreshTokenExpiresIn - (millis() - _refreshTokenReferenceTime);
 }
 
-String EveryAware::getAccessToken() {
+String EveryAwareAccess::getAccessToken() {
     return _accessToken;
 }
 
+/** 
+ * Synchronize time useing SNTP. This is necessary to verify that
+ * the TLS certificates offered by the server are currently valid.
+ * 
+ * TODO: check this
+ */
+void EveryAwareAccess::_syncTime() {
+
+    #if (EVA_DEBUG == 1)
+        Serial.print("Setting time using SNTP ...");
+    #endif
+    
+    configTime(8 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+    time_t now = time(nullptr);
+    while (now < 1000) {
+        delay(500);
+        #if (EVA_DEBUG == 1)
+            Serial.print(".");
+        #endif
+        now = time(nullptr);
+    }
+    
+    #if (EVA_DEBUG == 1)
+        Serial.println(" success.");
+        Serial.print("Current time (UNIX): "); Serial.println(now);
+    #endif
+}
+
+
+
+void EveryAwareClient::postData(
+            const String feed, 
+            const String source, 
+            const String datapoints) {
+}
+
+void EveryAwareClient::postData(
+            const String feed, 
+            const String source, 
+            JsonArray& datapoints) {
+
+
+
+    //      // put data into JSON
+    //
+    //      const size_t bufferSize = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(3) + 60;
+    //      DynamicJsonBuffer jsonBuffer(bufferSize);
+    //
+    //      JsonObject& point = jsonBuffer.createObject();
+    //      long long timestamp = time(NULL);
+    //      point["timestamp"] = timestamp * 1000LL;
+    //
+    //      JsonObject& channels = point.createNestedObject("channels");
+    //      JsonObject& channelTemp = channels.createNestedObject("temperature");
+    //      channelTemp["value"] = temperature;
+    //      JsonObject& channelHum = channels.createNestedObject("humidity");
+    //      channelHum["value"] = humidity;
+    //
+    //      JsonArray& data = jsonBuffer.createArray();
+    //      data.add(point);
+    //
+    //      data.printTo(Serial);
+    //      Serial.println("");
+    //
+    //      // send data
+    //
+    //      Serial.println("Sending data #################################");
+    //      const String url = "https://cs.everyaware.eu/api/v1/packets";
+    //
+    ////      HTTPClient http;
+    ////      http.begin(url, fingerprint);
+    ////
+    ////      http.addHeader("Authorization",             "Bearer " + accessToken);
+    ////      http.addHeader("Content-Type",              "application/json");
+    ////
+    ////      http.addHeader("meta.sourceId",             eva_sourceid);
+    ////      http.addHeader("meta.feeds",                eva_feed);
+    ////      http.addHeader("data.contentDetails.type",  "generic");
+    ////
+    ////      String postMessage;
+    ////      data.printTo(postMessage);
+    ////
+    ////      int httpCode = http.POST(postMessage);
+    ////
+    ////      Serial.print("http result:");
+    ////      Serial.println(httpCode);
+    ////
+    ////      String payload = http.getString();
+    ////      Serial.println(payload);
+    ////
+    ////      http.end();
+    //
+    ////      const size_t bufferSize2 = JSON_OBJECT_SIZE(2) + 110;
+    ////      DynamicJsonBuffer jsonBuffer2(bufferSize2);
+    ////      JsonObject& message = jsonBuffer2.parseObject(payload);
+    ////      if (message.containsKey("error")) {
+    ////        Serial.println("Error occurred. Requesting new tokens.");
+    ////        getTokens();
+    ////      }
+    //
+    //    }
+}
 

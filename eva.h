@@ -2,7 +2,9 @@
 #define EVA_H
 
 #define ARDUINOJSON_USE_LONG_LONG 1 // we need to store long long
+
 #include <ArduinoJson.h>
+#include <time.h>
 
 #define EVA_DEBUG 1
 #define EVA_WILDCARD "*"
@@ -12,12 +14,12 @@
  /**
  * TODO: maybe add function to retrieve arbitrary ranges of data, not just the latest
  */
-class EveryAware {
+class EveryAwareAccess {
     
     public:
 
-        EveryAware(const String baseUrl = EVA_BASE_URL);
-        ~EveryAware(void);
+        EveryAwareAccess(const String baseUrl = EVA_BASE_URL);
+        ~EveryAwareAccess(void);
 
 
         JsonObject* getJson(String relativeUrl, size_t objectSize);
@@ -49,20 +51,40 @@ class EveryAware {
         
         String getAccessToken();
 
-        /**
+    private:
+        String _baseUrl;
+        
+        String _clientId;
+        String _clientSecret;
+        
+        String _refreshToken;
+        unsigned long _refreshTokenExpiresIn;
+        unsigned long _refreshTokenReferenceTime;
+        
+        String _accessToken;
 
+        bool _refreshAccessToken();
+        bool _handleOauthResponse(JsonObject* jsonPtr);
+
+        void _syncTime();
+};
+
+class EveryAwareClient: public EveryAwareAccess {
+
+    public:
+    
         void postData(
-            const char * feed, 
-            const char * source, 
-            const char * datapoints);
+            const String feed, 
+            const String source, 
+            const String datapoints);
             
         void postData(
-            const char * feed, 
-            const char * source, 
-            JsonObject datapoints);
+            const String feed, 
+            const String source, 
+            JsonArray& datapoints);
 
+/**
 
-    
         JsonObject getLatestData(
             const char * feed, 
             const char * source, 
@@ -87,21 +109,6 @@ class EveryAware {
 
         void listenerLoop(void);
 */
-
-    private:
-        String _baseUrl;
-        
-        String _clientId;
-        String _clientSecret;
-        
-        String _refreshToken;
-        unsigned long _refreshTokenExpiresIn;
-        unsigned long _refreshTokenReferenceTime;
-        
-        String _accessToken;
-
-        bool _refreshAccessToken();
-        bool _handleOauthResponse(JsonObject* jsonPtr);
 };
 
 #endif
