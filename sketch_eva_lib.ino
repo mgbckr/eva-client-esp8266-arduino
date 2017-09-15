@@ -26,11 +26,11 @@ const char* wlan_password         = EVA_CONFIG_WLAN_PASSWORD;
 const String eva_sourceid         = "esp8266-test01";
 const String eva_feed             = "global";
 
-const String eva_client           = "airprobe_python_client";
-const String eva_client_secret    = "Py.alt000rnativi";
+const String eva_client           = EVA_CONFIG_CLIENT_ID;
+const String eva_client_secret    = EVA_CONFIG_CLIENT_SECRET;
 
-const String eva_user             = "becker";
-const String eva_password         = "testtt";
+const String eva_user             = EVA_CONFIG_USER;
+const String eva_password         = EVA_CONFIG_PASSWORD;
 
 #define USE_SERIAL Serial
 
