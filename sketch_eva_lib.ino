@@ -5,6 +5,7 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 #include <SimpleDHT.h>
+#include "eva.h"
 #include "data.h"
 
 /**
@@ -23,14 +24,14 @@
 const char* wlan_ssid             = EVA_CONFIG_WLAN_SSID;
 const char* wlan_password         = EVA_CONFIG_WLAN_PASSWORD;
 
-const String eva_sourceid         = "esp8266-test01";
-const String eva_feed             = "global";
-
 const String eva_client           = EVA_CONFIG_CLIENT_ID;
 const String eva_client_secret    = EVA_CONFIG_CLIENT_SECRET;
 
 const String eva_user             = EVA_CONFIG_USER;
 const String eva_password         = EVA_CONFIG_PASSWORD;
+
+const String eva_sourceid         = "esp8266-test01";
+const String eva_feed             = "global";
 
 #define USE_SERIAL Serial
 
@@ -144,94 +145,15 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 void getTokens() {
 
-    String url = "https://cs.everyaware.eu/oauth/token";
-    url += "?grant_type=password";
-    url += "&client_id=" + eva_client;
-    url += "&client_secret=" + eva_client_secret;
-    url += "&username=" + eva_user;
-    url += "&password=" + eva_password;
+    EveryAwareAccess eva;
+    eva.init(eva_user, eva_password, eva_client, eva_client_secret);
+    String refreshToken = eva.getRefreshToken();
+    
+    EveryAwareAccess eva2;
+    eva2.init(refreshToken, eva_client, eva_client_secret);
 
-    Serial.print("Requesting access token via: "); Serial.println(url);
-
-    HTTPClient http;
-    http.begin(url, fingerprint);
-
-    http.addHeader("Content-Type", "application/json");
-    int httpCode = http.GET();
-    Serial.print("HTTP response code:"); Serial.println(httpCode);
-    String content = http.getString();
-    Serial.println("HTTP content:");
-    Serial.println(content);
-
-    if (httpCode == 200) {
-        Serial.println("Processing response.");
-
-        // see: https://bblanchon.github.io/ArduinoJson/assistant/
-        const size_t bufferSize = JSON_OBJECT_SIZE(4) + 160;
-        DynamicJsonBuffer jsonBuffer(bufferSize);
-        JsonObject& root = jsonBuffer.parseObject(content);
-
-        const char* newAccessToken = root["access_token"];
-        const char* newRefreshToken = root["refresh_token"];
-        accessToken = String(newAccessToken);
-        refreshToken = String(refreshToken);
-
-        Serial.println(accessToken);
-        Serial.println(refreshToken);
-
-        Serial.println("Access token successfully retrieved.");
-    }
-
-    http.end();
-
-    /*  // Use WiFiClientSecure class to create TLS connection
-        WiFiClientSecure client;
-        Serial.print("Connecting to: "); Serial.print(host); Serial.print(" ... ");
-        if (!client.connect(host, httpsPort)) {
-
-        Serial.println("success.");
-
-        Serial.print("Checking certificate ... ")
-        if (client.verify(fingerprint, host)) {
-
-          Serial.println("success.");
-
-          // get access and refresh token
-          String url = "/oauth/token";
-          url += "?grant_type=password";
-          url += "&client_id="+ eva_client;
-          url += "&client_secret=" + eva_client_secret;
-          url += "&username=" + eva_user;
-          url += "&password=" + eva_password;
-
-
-
-        } else {
-          Serial.println("failed.");
-        }
-
-        } else {
-        Serial.println("failed.");
-        }
-    */
 }
 
-void syncTime() {
-
-    // Synchronize time useing SNTP. This is necessary to verify that
-    // the TLS certificates offered by the server are currently valid.
-    Serial.print("Setting time using SNTP ...");
-    configTime(8 * 3600, 0, "pool.ntp.org", "time.nist.gov");
-    time_t now = time(nullptr);
-    while (now < 1000) {
-        delay(500);
-        Serial.print(".");
-        now = time(nullptr);
-    }
-    Serial.println(" success.");
-    Serial.print("Current time (UNIX): ");
-    Serial.println(now);
-}
 
 // CORE
 
@@ -256,10 +178,10 @@ void setup() {
     Serial.println(" success.");
     Serial.print("IP: "); Serial.println(WiFi.localIP());
 
+
     // get access and refresh token
     getTokens();
 
-    syncTime();
 
     // initialize websocket connection
     int randomNumber = random(0, 999);

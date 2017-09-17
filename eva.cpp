@@ -6,8 +6,9 @@ const int httpsPort = 443;
 
 // should this be dynamic?
 
-EveryAwareAccess::EveryAwareAccess(String baseUrl) {
+EveryAwareAccess::EveryAwareAccess(String baseUrl, String sslFingerprint) {
     _baseUrl = baseUrl;
+    _sslFingerprint = sslFingerprint;
     _syncTime();
 }
 
@@ -28,7 +29,7 @@ JsonObject* EveryAwareAccess::getJson(String relativeUrl, size_t objectSize) {
     #endif
 
     HTTPClient http;
-    http.begin(url, EVA_SSH_FINGERPRINT);
+    http.begin(url, _sslFingerprint);
 
     http.addHeader("Content-Type", "application/json");
     int httpCode = http.GET();
@@ -104,7 +105,7 @@ bool EveryAwareAccess::_refreshAccessToken() {
     
     // building URL to refresh access token
     // TODO: move this to a constant?
-    String url = "https://cs.everyaware.eu/oauth/token";
+    String url = "/oauth/token";
     url += "?grant_type=refresh_token";
     url += "&client_id=" + _clientId;
     url += "&client_secret=" + _clientSecret;

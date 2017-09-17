@@ -8,7 +8,7 @@
 
 #define EVA_DEBUG 1
 #define EVA_WILDCARD "*"
-#define EVA_SSH_FINGERPRINT "29 41 9A 40 AF AF C6 70 65 E3 33 5D D2 B5 22 76 A0 07 13 6C"
+#define EVA_SSH_FINGERPRINT "67 5A 08 85 95 17 58 C4 D2 29 DA 07 14 00 D5 1A 2A 69 40 19"
 #define EVA_BASE_URL "https://cs.everyaware.eu"
 
  /**
@@ -18,7 +18,8 @@ class EveryAwareAccess {
     
     public:
 
-        EveryAwareAccess(const String baseUrl = EVA_BASE_URL);
+//        EveryAwareAccess(const String baseUrl = EVA_BASE_URL, const String caCert, const unsigned int caCertLen);
+        EveryAwareAccess(const String baseUrl = EVA_BASE_URL, const String sslFingerprint = EVA_SSH_FINGERPRINT);
         ~EveryAwareAccess(void);
 
 
@@ -53,6 +54,7 @@ class EveryAwareAccess {
 
     private:
         String _baseUrl;
+        String _sslFingerprint;
         
         String _clientId;
         String _clientSecret;
