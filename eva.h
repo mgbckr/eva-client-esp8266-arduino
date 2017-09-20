@@ -4,11 +4,10 @@
 #define ARDUINOJSON_USE_LONG_LONG 1 // we need to store long long
 
 #include <ArduinoJson.h>
-#include <time.h>
+#include <WiFiClientSecure.h>
 
 #define EVA_DEBUG 1
 #define EVA_WILDCARD "*"
-#define EVA_SSH_FINGERPRINT "67 5A 08 85 95 17 58 C4 D2 29 DA 07 14 00 D5 1A 2A 69 40 19"
 #define EVA_BASE_URL "https://cs.everyaware.eu"
 
  /**
@@ -18,8 +17,8 @@ class EveryAwareAccess {
     
     public:
 
-//        EveryAwareAccess(const String baseUrl = EVA_BASE_URL, const String caCert, const unsigned int caCertLen);
-        EveryAwareAccess(const String baseUrl = EVA_BASE_URL, const String sslFingerprint = EVA_SSH_FINGERPRINT);
+        EveryAwareAccess(const String baseUrl = EVA_BASE_URL);
+        EveryAwareAccess(const String baseUrl, const unsigned char caCert[], const unsigned int caCertLen);
         ~EveryAwareAccess(void);
 
 
@@ -54,7 +53,11 @@ class EveryAwareAccess {
 
     private:
         String _baseUrl;
-        String _sslFingerprint;
+
+        const unsigned char * _caCert;
+        unsigned int _caCertLen;
+
+        WiFiClientSecure _wifiClient;
         
         String _clientId;
         String _clientSecret;
@@ -65,10 +68,17 @@ class EveryAwareAccess {
         
         String _accessToken;
 
+        void _init(
+            const String baseUrl, 
+            const unsigned char caCert[], 
+            const unsigned int caCertLen);
+
         bool _refreshAccessToken();
         bool _handleOauthResponse(JsonObject* jsonPtr);
 
         void _syncTime();
+
+        
 };
 
 class EveryAwareClient: public EveryAwareAccess {
