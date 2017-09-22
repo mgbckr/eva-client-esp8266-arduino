@@ -5,10 +5,11 @@
 
 #include <ArduinoJson.h>
 #include <WiFiClientSecure.h>
+#include <WebSocketsClient.h>
 
 #define EVA_DEBUG 1
 #define EVA_WILDCARD "*"
-#define EVA_BASE_URL "https://cs.everyaware.eu"
+#define EVA_HOST "cs.everyaware.eu"
 
  /**
  * TODO: maybe add function to retrieve arbitrary ranges of data, not just the latest
@@ -17,8 +18,8 @@ class EveryAwareAccess {
     
     public:
 
-        EveryAwareAccess(const String baseUrl = EVA_BASE_URL);
-        EveryAwareAccess(const String baseUrl, const unsigned char caCert[], const unsigned int caCertLen);
+        EveryAwareAccess(const char * host = EVA_HOST);
+        EveryAwareAccess(const char * host, const unsigned char caCert[], const unsigned int caCertLen);
         ~EveryAwareAccess(void);
 
 
@@ -51,8 +52,8 @@ class EveryAwareAccess {
         
         String getAccessToken();
 
-    private:
-        String _baseUrl;
+    protected:
+        const char * _host;
 
         const unsigned char * _caCert;
         unsigned int _caCertLen;
@@ -69,7 +70,7 @@ class EveryAwareAccess {
         String _accessToken;
 
         void _init(
-            const String baseUrl, 
+            const char * host, 
             const unsigned char caCert[], 
             const unsigned int caCertLen);
 
@@ -94,6 +95,12 @@ class EveryAwareClient: public EveryAwareAccess {
             const String feed, 
             const String source, 
             JsonArray& datapoints);
+
+    private:
+    
+        WebSocketsClient _webSocket;
+        void _handleWebsocketEvent(WStype_t type, uint8_t * payload, size_t length);
+        void _setupWebsocket();
 
 /**
 

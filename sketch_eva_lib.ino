@@ -5,6 +5,7 @@
 #include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 #include <SimpleDHT.h>
+#include "EvaClient.h"
 #include "eva.h"
 #include "data.h"
 
@@ -38,12 +39,11 @@ const String eva_feed             = "global";
 // CONSTANTS
 
 const int led = D0;
-const char* host = "cs.everyaware.eu";
-const int httpsPort = 443;
-const char* fingerprint = "29 41 9A 40 AF AF C6 70 65 E3 33 5D D2 B5 22 76 A0 07 13 6C";
 
 // GLOBALS
 
+
+EvaClient eva;
 WebSocketsClient webSocket;
 
 String accessToken;
@@ -143,16 +143,6 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     }
 }
 
-void getTokens() {
-
-    EveryAwareAccess eva;
-    eva.init(eva_user, eva_password, eva_client, eva_client_secret);
-    String refreshToken = eva.getRefreshToken();
-    
-    EveryAwareAccess eva2;
-    eva2.init(refreshToken, eva_client, eva_client_secret);
-
-}
 
 
 // CORE
@@ -163,10 +153,14 @@ void setup() {
     pinMode(led, OUTPUT);
     pinMode(led, HIGH);
 
+    // init serial
     Serial.begin(115200);
 
-    Serial.println(WiFi.macAddress());
 
+    // logging into WLAN
+    
+    Serial.println(WiFi.macAddress());
+    
     Serial.print("Logging into WLAN: "); Serial.print(wlan_ssid); Serial.print(" ...");
     WiFi.mode(WIFI_STA);
     WiFi.begin(wlan_ssid, wlan_password);
@@ -178,10 +172,8 @@ void setup() {
     Serial.println(" success.");
     Serial.print("IP: "); Serial.println(WiFi.localIP());
 
-
-    // get access and refresh token
-    getTokens();
-
+    // initialize EvA client
+    eva.init(eva_user, eva_password, eva_client, eva_client_secret);
 
     // initialize websocket connection
     int randomNumber = random(0, 999);

@@ -2,7 +2,6 @@
 
 #include <ArduinoJson.h>
 
-
 class EvaDataArrayBuilder;
 class EvaDataPointBuilder;
 class EvaChannelBuilder;
