@@ -6,15 +6,14 @@
 #include <ArduinoJson.h>
 #include <SimpleDHT.h>
 #include "EvaClient.h"
-#include "eva.h"
-#include "data.h"
+#include "EvaData.h"
 
 /**
  * Imports:
  * EVA_CONFIG_WLAN_SSID
  * EVA_CONFIG_WLAN_PASSWORD
  */
-#include "config.h"
+#include "sketch_config.h"
 
 // https://github.com/Links2004/arduinoWebSockets
 #include <WebSocketsClient.h>
