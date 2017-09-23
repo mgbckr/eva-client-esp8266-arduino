@@ -1,10 +1,7 @@
 #define ARDUINOJSON_USE_LONG_LONG 1 // we need to store long long
 
-#include <time.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#include <ArduinoJson.h>
-#include <SimpleDHT.h>
+
 #include "EvaClient.h"
 #include "EvaData.h"
 
@@ -13,11 +10,7 @@
  * EVA_CONFIG_WLAN_SSID
  * EVA_CONFIG_WLAN_PASSWORD
  */
-#include "sketch_config.h"
-
-// https://github.com/Links2004/arduinoWebSockets
-#include <WebSocketsClient.h>
-
+#include "sketch_eva_lib_config.h"
 
 // SETTINGS
 
@@ -41,108 +34,9 @@ const int led = D0;
 
 // GLOBALS
 
-
 EvaClient eva;
-WebSocketsClient webSocket;
-
-String accessToken;
-String refreshToken;
-
-SimpleDHT11 dht;
-int pinDHT = D1;
 
 // FUNCTIONS
-
-
-void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
-
-    switch (type) {
-        case WStype_DISCONNECTED:
-            USE_SERIAL.printf("[WSc] Disconnected!\n");
-            break;
-
-        case WStype_CONNECTED:
-            USE_SERIAL.printf("[WSc] Connected to url: %s\n",  payload);
-            break;
-
-        case WStype_TEXT: {
-
-                String text = (char*) payload;
-
-                USE_SERIAL.printf("[WSc] get text: %s\n", payload);
-
-                if (payload[0] == 'h') {
-                    
-                    Serial.println("Heartbeat!");
-                    
-                } else if (payload[0] == 'o') {
-                    
-                    String msg = "[\"CONNECT\\naccept-version:1.1,1.0\\nauthorization:Bearer ";
-                    msg += accessToken;
-                    msg += "\\nheart-beat:10000,10000\\n\\n\\u0000\"]";
-                    webSocket.sendTXT(msg);
-
-                } else if (text.startsWith("a[\"CONNECTED")) {
-
-                    // subscribe to message queue (data comes in through this channel)
-                    String msg = "[\"SUBSCRIBE\\nid:sub-0\\ndestination:/user/queue/messages\\n\\n\\u0000\"]";
-                    webSocket.sendTXT(msg);
-                    delay(1000);
-
-                    // subscribe to ack queue (we get an ACK after we request data updates from a source)
-                    msg = "[\"SUBSCRIBE\\nid:sub-1\\ndestination:/user/queue/ack\\n\\n\\u0000\"]";
-                    webSocket.sendTXT(msg);
-                    delay(1000);
-
-                    // send request to send data updates from a source
-                    msg = "[\"SEND\\ndestination:/app/channelpoint/register\\n\\n{\\\"feed\\\":\\\"";
-                    msg += eva_feed;
-                    msg += "\\\",\\\"sourceId\\\":\\\"";
-                    msg += eva_sourceid;
-                    msg += "\\\",\\\"channels\\\":[\\\"ledOn\\\"],\\\"requestId\\\":\\\"randomConstant:x12gazs81\\\"}\\u0000\"]";
-                    webSocket.sendTXT(msg);
-                    delay(1000);
-                    
-                } else if (text.startsWith("a[\"MESSAGE") && text.indexOf("destination:/user/queue/messages") >= 0) {
-
-                    Serial.print("Reveived data update: ");
-                    int index = text.indexOf("ledOn");
-                    if (index >= 0) {
-
-                        int offset = 21;
-                        Serial.print("ledOn=");
-                        Serial.println(text.substring(index + offset, index + offset + 4));
-                        bool ledOn = (text[index + offset] == 't'); // extracts first letter of true/false
-                        if (ledOn) {
-                            digitalWrite(led, LOW); // low turns it on ... don't know why this is reversed
-                        } else {
-                            digitalWrite(led, HIGH);
-                        }
-                        
-                    } else {
-                        Serial.println("no 'ledOn' channel available.");
-                    }
-                    
-                }
-
-                // send message to server
-                // webSocket.sendTXT("message here");
-                break;
-            }
-        case WStype_BIN:
-            USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
-            hexdump(payload, length);
-
-            // send data to server
-            // webSocket.sendBIN(payload, length);
-            break;
-        default:
-            USE_SERIAL.printf("[WSc] something: %s\n", payload);
-            break;
-    }
-}
-
-
 
 // CORE
 
@@ -173,49 +67,27 @@ void setup() {
 
     // initialize EvA client
     eva.init(eva_user, eva_password, eva_client, eva_client_secret);
-
-    // initialize websocket connection
-    int randomNumber = random(0, 999);
-    String socketUrl = "/socketentry/";
-    socketUrl += random(0, 999);
-    socketUrl += "/";
-    socketUrl += random(0, 999999);
-    socketUrl += "/websocket";
-    webSocket.begin("cs.everyaware.eu", 80, socketUrl);
-    webSocket.setExtraHeaders();
-    //  webSocket.begin("echo.websocket.org", 80, "/");
-    //  webSocket.setAuthorization(const_cast<char*>(("Bearer " + accessToken).c_str()));
-    //  webSocket.setAuthorization(const_cast<char*>(eva_user.c_str()), const_cast<char*>(eva_password.c_str()));
-    webSocket.onEvent(webSocketEvent);
-
-    //  webSocket.setAuthorization(const_cast<char*>(("Bearer " + accessToken).c_str()));
-    ////  webSocket.setAuthorization(const_cast<char*>(eva_user.c_str()), const_cast<char*>(eva_password.c_str()));
-    //  int randomNumber = random(0,999);
-    //  String socketUrl = "/ubicon-webapp/socketentry/";
-    //  socketUrl += random(0,999);
-    //  socketUrl += "/";
-    //  socketUrl += random(0,999999);
-    //  socketUrl += "/websocket";
-    //  webSocket.begin("192.168.43.128", 8080, socketUrl);
-    //  webSocket.onEvent(webSocketEvent);
+    eva.connectWebsocket();
 }
 
 void loop() {
 
-    // test
 
-    JsonArray & data = EvaDataArrayBuilder(1200).
-        addDataPoint(123123).
-            addChannelValue("temp", 8.9).
-            addChannel("gps").
-                addComponent("lon", 45.0).
-                addComponent("lat", 12.1).
-                finalizeChannel().
-            finalizeDataPoint().
-        finalizeDataArray();
+    eva.loop();
+
+    // test
+    
+//    JsonArray & data = EvaDataArrayBuilder(1200).
+//        addDataPoint(123123).
+//            addChannelValue("temp", 8.9).
+//            addChannel("gps").
+//                addComponent("lon", 45.0).
+//                addComponent("lat", 12.1).
+//                finalizeChannel().
+//            finalizeDataPoint().
+//        finalizeDataArray();
 
     // rest
-    webSocket.loop();
 
     //  if(WiFi.status() == WL_CONNECTED){ //Check WiFi connection status
     //

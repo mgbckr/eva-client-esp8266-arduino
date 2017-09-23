@@ -1,6 +1,18 @@
 #include "EvaClientWebsocket.h"
 
+void EvaClientWebsocket::connectWebsocket() {
+    _connectWebsocket();
+}
+
+void EvaClientWebsocket::loop() {
+    _webSocket.loop();
+}
+
 void EvaClientWebsocket::_handleWebsocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+
+    #if (EVA_DEBUG == 1)
+        Serial.println("Handling websocket event.");
+    #endif
 
     switch (type) {
         case WStype_DISCONNECTED:
@@ -88,10 +100,14 @@ void EvaClientWebsocket::_handleWebsocketEvent(WStype_t type, uint8_t * payload,
     }
 }
 
-void EvaClientWebsocket::_setupWebsocket() {
+void EvaClientWebsocket::_connectWebsocket() {
 
-    WebSocketsClient webSocket;
-    _webSocket = webSocket;
+    #if (EVA_DEBUG == 1)
+        Serial.println("Init websocket.");
+    #endif
+
+    WebSocketsClient webSocket2;
+    _webSocket = webSocket2;
     
     // initialize websocket connection
     int randomNumber = random(0, 999);
@@ -100,11 +116,28 @@ void EvaClientWebsocket::_setupWebsocket() {
     socketUrl += "/";
     socketUrl += random(0, 999999);
     socketUrl += "/websocket";
-    webSocket.begin("cs.everyaware.eu", 80, socketUrl);
-    webSocket.setExtraHeaders();
+
+    #if (EVA_DEBUG == 1)
+        Serial.print("Connecting to: "); Serial.println(socketUrl);
+    #endif
+    
+    _webSocket.begin(_host, 80, socketUrl);
+    _webSocket.setExtraHeaders();
     //  webSocket.setAuthorization(const_cast<char*>(("Bearer " + _accessToken).c_str()));
 
-    webSocket.onEvent( [this](WStype_t type, uint8_t * payload, size_t length) { 
+    #if (EVA_DEBUG == 1)
+        Serial.print("Registering event handler ... "); 
+    #endif  
+    
+    _webSocket.onEvent([&](WStype_t type, uint8_t * payload, size_t length) { 
+        #if (EVA_DEBUG == 1)
+            Serial.print("Websocket event received: "); Serial.printf("%s\n", payload);
+        #endif
+        
         _handleWebsocketEvent(type, payload, length); 
     });
+
+    #if (EVA_DEBUG == 1)
+        Serial.println("done."); 
+    #endif  
 }

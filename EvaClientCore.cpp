@@ -72,7 +72,6 @@ JsonObject* EvaClientCore::getJson(String relativeUrl, size_t objectSize) {
         
         if (line == "\r") {
             Serial.println("========= headers");
-            Serial.println("Headers received");
             break;
         }
     }
