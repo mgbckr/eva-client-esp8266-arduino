@@ -15,13 +15,37 @@ void EvaClientWebsocket::_handleWebsocketEvent(WStype_t type, uint8_t * payload,
     #endif
 
     switch (type) {
-        case WStype_DISCONNECTED:
-            Serial.printf("[WSc] Disconnected!\n");
-            break;
+        
+        case WStype_DISCONNECTED: { 
+             
+                #if (EVA_DEBUG == 1)
+                    Serial.println("WebSocket disconnected.");
+                #endif
+                
+                break;
+            }
 
-        case WStype_CONNECTED:
-            Serial.printf("[WSc] Connected to url: %s\n",  payload);
-            break;
+        case WStype_CONNECTED: {
+        
+                #if (EVA_DEBUG == 1)
+                    Serial.printf("WebSocket connected to: %s\n",  payload);
+                #endif
+                
+                #if (EVA_DEBUG == 1)
+                    Serial.println("Sending connect message.");
+                #endif
+                
+                String msg = "CONNECT\n";
+                msg += "accept-version:1.1,1.0\n";
+//                msg += "authorization:Bearer "; msg += _accessToken; msg += "\n";
+                msg += "heart-beat:10000,10000\n";
+                msg += "\n\u0000";
+                
+                _webSocket.sendTXT(msg);
+                delay(1000);
+                
+                break;
+            }
 
         case WStype_TEXT: {
 
@@ -87,14 +111,17 @@ void EvaClientWebsocket::_handleWebsocketEvent(WStype_t type, uint8_t * payload,
                 // webSocket.sendTXT("message here");
                 break;
             }
-        case WStype_BIN:
-            Serial.printf("[WSc] get binary length: %u\n", length);
-            hexdump(payload, length);
-
-            // send data to server
-            // webSocket.sendBIN(payload, length);
-            break;
+            
+        case WStype_BIN: {
+                Serial.printf("[WSc] get binary length: %u\n", length);
+                hexdump(payload, length);
+    
+                // send data to server
+                // webSocket.sendBIN(payload, length);
+                break;
+            }
         default:
+        
             Serial.printf("[WSc] something: %s\n", payload);
             break;
     }
@@ -111,11 +138,7 @@ void EvaClientWebsocket::_connectWebsocket() {
     
     // initialize websocket connection
     int randomNumber = random(0, 999);
-    String socketUrl = "/socketentry/";
-    socketUrl += random(0, 999);
-    socketUrl += "/";
-    socketUrl += random(0, 999999);
-    socketUrl += "/websocket";
+    String socketUrl = "/socketentry/websocket";
 
     #if (EVA_DEBUG == 1)
         Serial.print("Connecting to: "); Serial.println(socketUrl);

@@ -72,7 +72,6 @@ void setup() {
 
 void loop() {
 
-
     eva.loop();
 
     // test
