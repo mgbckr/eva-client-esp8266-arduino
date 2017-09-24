@@ -3,6 +3,7 @@
 #define EVA_DEBUG 1
 #define EVA_HOST "cs.everyaware.eu"
 #define EVA_PORT 443
+#define EVA_BASE_URL ""
 
 #include "Arduino.h"
 #include <ArduinoJson.h>
@@ -12,8 +13,8 @@ class EvaClientCore {
     
     public:
 
-        EvaClientCore(const char * host = EVA_HOST, int port = EVA_PORT);
-        EvaClientCore(const char * host, const int port, const unsigned char caCert[], const unsigned int caCertLen);
+        EvaClientCore(const char * host = EVA_HOST, int port = EVA_PORT, const char * baseUrl = EVA_BASE_URL);
+        EvaClientCore(const char * host, const int port, const char * baseUrl, const unsigned char caCert[], const unsigned int caCertLen);
         ~EvaClientCore(void);
 
         JsonObject* getJson(String relativeUrl, size_t objectSize);
@@ -22,6 +23,7 @@ class EvaClientCore {
     
         const char * _host;
         int _port;
+        const char * _baseUrl;
 
         const unsigned char * _caCert;
         unsigned int _caCertLen;
@@ -33,6 +35,7 @@ class EvaClientCore {
         void _init(
             const char * host, 
             const int port, 
+            const char * baseUrl, 
             const unsigned char caCert[], 
             const unsigned int caCertLen);
 

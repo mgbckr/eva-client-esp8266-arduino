@@ -19,10 +19,28 @@ void EvaClientWebsocket::_handleWebsocketEvent(WStype_t type, uint8_t * payload,
             Serial.printf("[WSc] Disconnected!\n");
             break;
 
-        case WStype_CONNECTED:
-            Serial.printf("[WSc] Connected to url: %s\n",  payload);
-            break;
+        case WStype_CONNECTED: {
+                Serial.printf("[WSc] Connected to url: %s\n",  payload);
+    
+                        String msg = "CONNECT\n";
+                        msg += "accept-version:1.1,1.0\n";
+                        msg += "heart-beat:10000,10000\n";
+                        msg += "authorization:Bearer "; msg += _accessToken; msg += "\n";
+                        msg += "\n";
 
+                        /**
+                         * The CONNECT message(like any STOMP message) needs to be NULL-terminated (\u0000,\0).
+                         * However, when we send a String or a char[] array without specifying 
+                         * a length, the size of the message payload is derived by strlen() internally,
+                         * thus dropping any NULL values appended to the "msg"-String.
+                         * 
+                         * To solve this, we first convert the String to a NULL terminated char[] array
+                         * via "c_str" and set the length of the payload to include the NULL value.
+                         */
+                        _webSocket.sendTXT(msg.c_str(), msg.length() + 1);
+                
+                break;
+            }
         case WStype_TEXT: {
 
                 String text = (char*) payload;
@@ -111,13 +129,13 @@ void EvaClientWebsocket::_connectWebsocket() {
     
     // initialize websocket connection
     int randomNumber = random(0, 999);
-//    String socketUrl = "/socketentry/websocket";
+    String socketUrl = "/socketentry/websocket";
 
-    String socketUrl = "/socketentry/";
-    socketUrl += random(0,999);
-    socketUrl += "/";
-    socketUrl += random(0,999999);
-    socketUrl += "/websocket";
+//    String socketUrl = "/socketentry/";
+//    socketUrl += random(0,999);
+//    socketUrl += "/";
+//    socketUrl += random(0,999999);
+//    socketUrl += "/websocket";
 
     #if (EVA_DEBUG == 1)
         Serial.print("Connecting to: "); Serial.println(socketUrl);

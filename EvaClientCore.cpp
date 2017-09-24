@@ -2,12 +2,12 @@
 #include "EvaRootCert.h"
 #include "EvaClientCore.h"
 
-EvaClientCore::EvaClientCore(const char *  host, const int port) {
-    _init(host, port, evaRootCert, evaRootCertLen);
+EvaClientCore::EvaClientCore(const char *  host, const int port, const char * baseUrl) {
+    _init(host, port, baseUrl, evaRootCert, evaRootCertLen);
 }
 
-EvaClientCore::EvaClientCore(const char * host, const int port, const unsigned char caCert[], const unsigned int caCertLen) {
-    _init(host, port, caCert, caCertLen);
+EvaClientCore::EvaClientCore(const char * host, const int port, const char * baseUrl, const unsigned char caCert[], const unsigned int caCertLen) {
+    _init(host, port, baseUrl, caCert, caCertLen);
 }
 
 EvaClientCore::~EvaClientCore() {
@@ -134,9 +134,10 @@ void EvaClientCore::_syncTime() {
     #endif
 }
 
-void EvaClientCore::_init(const char * host, const int port, const unsigned char caCert[], const unsigned int caCertLen) {
+void EvaClientCore::_init(const char * host, const int port, const char * baseUrl, const unsigned char caCert[], const unsigned int caCertLen) {
     _host = host;
     _port = port;
+    _baseUrl = baseUrl;
     _caCert = caCert;
     _caCertLen = caCertLen;
 

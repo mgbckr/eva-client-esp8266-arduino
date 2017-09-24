@@ -44,7 +44,8 @@ bool EvaClientOAuth::_refreshAccessToken() {
     
     // building URL to refresh access token
     // TODO: move this to a constant?
-    String url = "/oauth/token";
+    String url = _baseUrl;
+    url += "/oauth/token";
     url += "?grant_type=refresh_token";
     url += "&client_id=" + _clientId;
     url += "&client_secret=" + _clientSecret;
